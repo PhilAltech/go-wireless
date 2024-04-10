@@ -1,11 +1,10 @@
-package wireless
+package common
 
 import (
 	"context"
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"math/rand"
 	"net"
@@ -16,10 +15,6 @@ import (
 )
 
 const CONN_MAX_LISTEN_BUFF = 3 * 1024 // Allow 3kB of buffer for listening to events
-
-func init() {
-	rand.Seed(time.Now().Unix())
-}
 
 // Conn represents a connection to a WPA supplicant control interface
 type Conn struct {
@@ -37,9 +32,20 @@ type Conn struct {
 
 // Dial will dial the WPA control interface with the given
 // interface name
-func Dial(iface string) (*Conn, error) {
-	c := &Conn{Interface: iface, log: log.New(ioutil.Discard, "", log.LstdFlags)}
-	err := c.init()
+func DialWPA(iface string) (*Conn, error) {
+	c := &Conn{Interface: iface, log: log.New(io.Discard, "", log.LstdFlags)}
+	err := c.init("/var/run/wpa_supplicant/"+c.Interface, "/tmp/wpa_ctrl")
+	if err != nil {
+		return nil, err
+	}
+	return c, nil
+}
+
+// Dial will dial the HOSTAPD control interface with the given
+// interface name
+func DialHostapd(iface string) (*Conn, error) {
+	c := &Conn{Interface: iface, log: log.New(io.Discard, "", log.LstdFlags)}
+	err := c.init("/var/run/hostapd/"+c.Interface, "/tmp/hostapd_ctrl")
 	if err != nil {
 		return nil, err
 	}
@@ -101,8 +107,8 @@ func (c *Conn) processMessage(bytesRead int, data []byte, err error) {
 	c.publishEvent(ev)
 }
 
-func (c *Conn) init() error {
-	addr, err := net.ResolveUnixAddr("unixgram", "/var/run/wpa_supplicant/"+c.Interface)
+func (c *Conn) init(socket string, lsockePrefix string) error {
+	addr, err := net.ResolveUnixAddr("unixgram", socket)
 	if err != nil {
 		return err
 	}
@@ -111,7 +117,8 @@ func (c *Conn) init() error {
 		c.WithLogOutput(os.Stderr)
 	}
 
-	c.lsockname = fmt.Sprintf("/tmp/wpa_ctrl_%d_%d", os.Getpid(), rand.Intn(10000))
+	c.lsockname = fmt.Sprintf(lsockePrefix+"_%d_%d", os.Getpid(), rand.Intn(10000))
+
 	laddr, err := net.ResolveUnixAddr("unixgram", c.lsockname)
 	if err != nil {
 		return err

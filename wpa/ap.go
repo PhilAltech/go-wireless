@@ -1,4 +1,4 @@
-package wireless
+package wpa
 
 // AP represents an access point seen by the scan networks command
 type AP struct {

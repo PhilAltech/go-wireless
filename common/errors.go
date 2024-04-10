@@ -1,4 +1,4 @@
-package wireless
+package common
 
 import (
 	"errors"

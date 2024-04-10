@@ -1,6 +1,10 @@
-package wireless
+package wpa
 
-import "strings"
+import (
+	"strings"
+	"github.com/PhilAltech/go-wireless/common"
+)
+	
 
 // This file contains components from github.com/brlbil/wpaclient
 //
@@ -225,5 +229,5 @@ func setCmds(net Network) []string {
 }
 
 func setCmdJoin(idx int, bits ...string) string {
-	return strings.Join(append([]string{CmdSetNetwork, itoa(idx)}, bits...), " ")
+	return strings.Join(append([]string{common.CmdWpaSetNetwork, itoa(idx)}, bits...), " ")
 }

@@ -5,7 +5,7 @@ import (
 	"flag"
 	"fmt"
 
-	"github.com/theojulienne/go-wireless"
+	wireless "github.com/PhilAltech/go-wireless/wpa"
 )
 
 func main() {

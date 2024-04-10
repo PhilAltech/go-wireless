@@ -1,7 +1,7 @@
-package conf
+package confWpa
 
 import (
-	"io/ioutil"
+	"os"
 	"strings"
 )
 
@@ -28,7 +28,7 @@ func (f *File) Path() string {
 
 // Load will parse the file contents into Preamble and Networks
 func (f *File) Load() error {
-	data, err := ioutil.ReadFile(f.path)
+	data, err := os.ReadFile(f.path)
 	if err != nil {
 		return err
 	}
@@ -39,7 +39,7 @@ func (f *File) Load() error {
 
 // Save will save the config to the file path
 func (f *File) Save() error {
-	return ioutil.WriteFile(f.path, renderFile(f), 0600)
+	return os.WriteFile(f.path, renderFile(f), 0600)
 }
 
 func renderFile(file *File) []byte {

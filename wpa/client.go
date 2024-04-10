@@ -1,4 +1,4 @@
-package wireless
+package wpa
 
 import (
 	"context"
@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"github.com/PhilAltech/go-wireless/common"
 )
 
 // WPAConn is an interface to the connection
@@ -19,7 +20,7 @@ type WPAConn interface {
 	SendCommandBoolWithContext(context.Context, ...string) error
 	SendCommandIntWithContext(context.Context, ...string) (int, error)
 	io.Closer
-	Subscribe(...string) *Subscription
+	Subscribe(...string) *common.Subscription
 }
 
 // Client represents a wireless client
@@ -34,7 +35,7 @@ type Client struct {
 // given interface in WPA
 func NewClient(iface string) (c *Client, err error) {
 	c = new(Client)
-	c.conn, err = Dial(iface)
+	c.conn, err = common.DialWPA(iface)
 	if err != nil {
 		return
 	}
@@ -79,12 +80,12 @@ func (cl *Client) Close() {
 }
 
 // Conn will return the underlying connection
-func (cl *Client) Conn() *Conn {
-	return cl.conn.(*Conn)
+func (cl *Client) Conn() *common.Conn {
+	return cl.conn.(*common.Conn)
 }
 
 // Subscribe will subscribe to certain events that happen in WPA
-func (cl *Client) Subscribe(topics ...string) *Subscription {
+func (cl *Client) Subscribe(topics ...string) *common.Subscription {
 	return cl.conn.Subscribe(topics...)
 }
 
@@ -92,7 +93,7 @@ func (cl *Client) Subscribe(topics ...string) *Subscription {
 func (cl *Client) Status() (State, error) {
 	ctx, cancel := cl.getContext()
 	defer cancel()
-	data, err := cl.conn.SendCommandWithContext(ctx, CmdStatus)
+	data, err := cl.conn.SendCommandWithContext(ctx, common.CmdWpaStatus)
 	if err != nil {
 		return State{}, err
 	}
@@ -108,13 +109,13 @@ func (cl *Client) Scan() (nets APs, err error) {
 		timeout = 2 * time.Second
 	}
 
-	err = cl.conn.SendCommandBool(CmdScan)
+	err = cl.conn.SendCommandBool(common.CmdWpaScan)
 	if err != nil {
 		return
 	}
 
-	results := cl.conn.Subscribe(EventScanResults)
-	failed := cl.conn.Subscribe(EventScanFailed)
+	results := cl.conn.Subscribe(common.EventScanResults)
+	failed := cl.conn.Subscribe(common.EventScanFailed)
 
 	defer results.Unsubscribe()
 	defer failed.Unsubscribe()
@@ -123,7 +124,7 @@ func (cl *Client) Scan() (nets APs, err error) {
 		for {
 			select {
 			case <-failed.Next():
-				err = ErrScanFailed
+				err = common.ErrScanFailed
 				return
 			case <-results.Next():
 				return
@@ -133,7 +134,7 @@ func (cl *Client) Scan() (nets APs, err error) {
 		}
 	}()
 
-	scanned, err := cl.conn.SendCommand(CmdScanResults)
+	scanned, err := cl.conn.SendCommand(common.CmdWpaScanResults)
 	if err != nil {
 		return
 	}
@@ -149,7 +150,7 @@ func (cl *Client) Networks() (nets Networks, err error) {
 }
 
 func (cl *Client) NetworksWithContext(ctx context.Context) (nets Networks, err error) {
-	data, err := cl.conn.SendCommandWithContext(ctx, CmdListNetworks)
+	data, err := cl.conn.SendCommandWithContext(ctx, common.CmdWpaListNetworks)
 	if err != nil {
 		return nil, err
 	}
@@ -180,7 +181,7 @@ func (cl *Client) ConnectWithContext(ctx context.Context, net Network) (Network,
 		return net, err
 	}
 
-	sub := cl.conn.Subscribe(EventNetworkNotFound, EventAuthReject, EventConnected, EventDisconnected, EventAssocReject)
+	sub := cl.conn.Subscribe(common.EventNetworkNotFound, common.EventAuthReject, common.EventConnected, common.EventDisconnected, common.EventAssocReject)
 	defer sub.Unsubscribe()
 
 	if err := cl.EnableNetworkWithContext(ctx, net.ID); err != nil {
@@ -198,16 +199,16 @@ func (cl *Client) ConnectWithContext(ctx context.Context, net Network) (Network,
 	select {
 	case ev := <-sub.Next():
 		switch ev.Name {
-		case EventConnected:
+		case common.EventConnected:
 			return net, cl.SaveConfig()
-		case EventNetworkNotFound:
-			return net, ErrSSIDNotFound
-		case EventAuthReject:
-			return net, ErrAuthFailed
-		case EventDisconnected:
-			return net, ErrDisconnected
-		case EventAssocReject:
-			return net, ErrAssocRejected
+		case common.EventNetworkNotFound:
+			return net, common.ErrSSIDNotFound
+		case common.EventAuthReject:
+			return net, common.ErrAuthFailed
+		case common.EventDisconnected:
+			return net, common.ErrDisconnected
+		case common.EventAssocReject:
+			return net, common.ErrAssocRejected
 		default:
 			return net, errors.New("failed to catch event " + ev.Name)
 		}
@@ -250,7 +251,7 @@ func (cl *Client) UpdateNetwork(net Network) (Network, error) {
 
 func (cl *Client) UpdateNetworkWithContext(ctx context.Context, net Network) (Network, error) {
 	if net.IDStr == "" {
-		return net, ErrNoIdentifier
+		return net, common.ErrNoIdentifier
 	}
 
 	for _, cmd := range setCmds(net) {
@@ -278,7 +279,7 @@ func (cl *Client) AddNetworkWithContext(ctx context.Context, net Network) (Netwo
 		}
 	}
 
-	i, err := cl.conn.SendCommandIntWithContext(ctx, CmdAddNetwork)
+	i, err := cl.conn.SendCommandIntWithContext(ctx, common.CmdWpaAddNetwork)
 	if err != nil {
 		return net, err
 	}
@@ -303,7 +304,7 @@ func (cl *Client) AddNetworkWithContext(ctx context.Context, net Network) (Netwo
 func (cl *Client) RemoveNetwork(id int) error {
 	ctx, cancel := cl.getContext()
 	defer cancel()
-	return cl.conn.SendCommandBoolWithContext(ctx, CmdRemoveNetwork, strconv.Itoa(id))
+	return cl.conn.SendCommandBoolWithContext(ctx, common.CmdWpaRemoveNetwork, strconv.Itoa(id))
 }
 
 // EnableNetwork will EnableNetwork
@@ -314,7 +315,7 @@ func (cl *Client) EnableNetwork(id int) error {
 }
 
 func (cl *Client) EnableNetworkWithContext(ctx context.Context, id int) error {
-	return cl.conn.SendCommandBoolWithContext(ctx, CmdEnableNetwork, strconv.Itoa(id))
+	return cl.conn.SendCommandBoolWithContext(ctx, common.CmdWpaEnableNetwork, strconv.Itoa(id))
 }
 
 // SelectNetwork will SelectNetwork
@@ -325,7 +326,7 @@ func (cl *Client) SelectNetwork(id int) error {
 }
 
 func (cl *Client) SelectNetworkWithContext(ctx context.Context, id int) error {
-	return cl.conn.SendCommandBoolWithContext(ctx, CmdSelectNetwork, strconv.Itoa(id))
+	return cl.conn.SendCommandBoolWithContext(ctx, common.CmdWpaSelectNetwork, strconv.Itoa(id))
 }
 
 // Disconnect will Disconnect
@@ -336,35 +337,35 @@ func (cl *Client) Disconnect() error {
 }
 
 func (cl *Client) DisconnectWithContext(ctx context.Context) error {
-	return cl.conn.SendCommandBoolWithContext(ctx, CmdDisconnect)
+	return cl.conn.SendCommandBoolWithContext(ctx, common.CmdWpaDisconnect)
 }
 
 // DisableNetwork will DisableNetwork
 func (cl *Client) DisableNetwork(id int) error {
 	ctx, cancel := cl.getContext()
 	defer cancel()
-	return cl.conn.SendCommandBoolWithContext(ctx, CmdDisableNetwork+" "+strconv.Itoa(id))
+	return cl.conn.SendCommandBoolWithContext(ctx, common.CmdWpaDisableNetwork+" "+strconv.Itoa(id))
 }
 
 // SaveConfig will SaveConfig
 func (cl *Client) SaveConfig() error {
 	ctx, cancel := cl.getContext()
 	defer cancel()
-	return cl.conn.SendCommandBoolWithContext(ctx, CmdSaveConfig)
+	return cl.conn.SendCommandBoolWithContext(ctx, common.CmdWpaSaveConfig)
 }
 
 // LoadConfig will LoadConfig
 func (cl *Client) LoadConfig() error {
 	ctx, cancel := cl.getContext()
 	defer cancel()
-	return cl.conn.SendCommandBoolWithContext(ctx, CmdReconfigure)
+	return cl.conn.SendCommandBoolWithContext(ctx, common.CmdWpaReconfigure)
 }
 
 // GetNetworkAttr will get the given attribute of the given network
 func (cl *Client) GetNetworkAttr(id int, attr string) (string, error) {
 	ctx, cancel := cl.getContext()
 	defer cancel()
-	s, err := cl.conn.SendCommandWithContext(ctx, CmdGetNetwork, strconv.Itoa(id), attr)
+	s, err := cl.conn.SendCommandWithContext(ctx, common.CmdWpaGetNetwork, strconv.Itoa(id), attr)
 	if err != nil {
 		return s, err
 	}

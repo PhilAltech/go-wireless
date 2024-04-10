@@ -6,7 +6,8 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/theojulienne/go-wireless"
+	wireless "github.com/PhilAltech/go-wireless/wpa"
+	"github.com/PhilAltech/go-wireless/common"
 )
 
 func notImplemented(c *gin.Context) {
@@ -19,9 +20,9 @@ func json(err error) map[string]string {
 
 func errStatus(err error) int {
 	switch err {
-	case wireless.ErrFailBusy:
+	case common.ErrFailBusy:
 		return 409
-	case wireless.ErrNoIdentifier, wireless.ErrAssocRejected, wireless.ErrSSIDNotFound:
+	case common.ErrNoIdentifier, common.ErrAssocRejected, common.ErrSSIDNotFound:
 		return 400
 	default:
 		return 500
@@ -173,7 +174,7 @@ func addNetwork(c *gin.Context) {
 		if err != nil {
 			c.Error(err)
 
-			if err == wireless.ErrSSIDNotFound && force {
+			if err == common.ErrSSIDNotFound && force {
 				wc.SaveConfig()
 				c.JSON(200, newNet)
 				return

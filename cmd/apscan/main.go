@@ -3,16 +3,23 @@ package main
 import (
 	"fmt"
 
-	"github.com/theojulienne/go-wireless"
+	wireless "github.com/PhilAltech/go-wireless/wpa"
 )
 
 func main() {
-	iface, ok := wireless.DefaultInterface()
-	if !ok {
+	//iface, ok := wireless.DefaultInterface()
+	//if !ok {
+	//	panic("no wifi cards on the system")
+	//}
+	
+
+	ifaces := wireless.InterfacesFromWPARunDir("/run/wpa_supplicant")
+	if len(ifaces) == 0 {
 		panic("no wifi cards on the system")
 	}
-	fmt.Printf("Using interface: %s\n", iface)
+	iface := ifaces[0]
 
+	fmt.Printf("Using interface: %s\n", iface)
 	wc, err := wireless.NewClient(iface)
 	if err != nil {
 		panic(err)

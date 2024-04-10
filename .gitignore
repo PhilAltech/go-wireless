@@ -2,3 +2,5 @@ c.out
 bin/*
 dpkg/wpapi/usr/bin/wpapi
 *.deb
+.vscode/launch.json
+.vscode/tasks.json

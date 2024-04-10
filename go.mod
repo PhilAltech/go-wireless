@@ -1,5 +1,4 @@
-module github.com/theojulienne/go-wireless
-
+module github.com/PhilAltech/go-wireless
 go 1.19
 
 require (

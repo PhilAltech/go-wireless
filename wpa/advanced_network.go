@@ -1,4 +1,4 @@
-package wireless
+package wpa
 
 type rawString string
 

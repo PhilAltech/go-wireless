@@ -1,9 +1,9 @@
-package conf
+package confWpa
 
 import (
 	"strings"
 
-	"github.com/theojulienne/go-wireless"
+	wireless "github.com/PhilAltech/go-wireless/wpa"
 )
 
 // Network models a network in a WPA config file
