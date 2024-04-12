@@ -32,6 +32,8 @@ func (f *File) Load() error {
 		return err
 	}
 
+	f.HostapdConf.Additionals = make(map[string]string)
+
 	for _, l := range strings.Split(string(data), "\n") {
 		l = strings.TrimSpace(l)
 
@@ -91,17 +93,37 @@ func (f *File) Load() error {
 
 // Save will save the config to the file path
 func (f *File) Save() error {
-	data := []string{
-		"ctrl_interface=" + f.HostapdConf.Ctrl_interface,
-		"bridge=" + f.HostapdConf.Bridge,
-		"interface=" + f.HostapdConf.Interface,
-		"ssid=" + f.HostapdConf.SSID,
-		"wpa_passphrase=" + f.HostapdConf.Password,
-		"ignore_broadcast_ssid=" + f.HostapdConf.IgnoreBroadcastSSID,
-		"ieee80211n=" + f.HostapdConf.Ieee80211n,
-		"hw_mode=" + f.HostapdConf.Hw_mode,
-		"country_code=" + f.HostapdConf.Country_code,
-		"channel=" + f.HostapdConf.Channel,
+	data := []string{}
+
+	if f.HostapdConf.Interface != "" {
+		data = append(data, "ctrl_interface=" + f.HostapdConf.Ctrl_interface)
+	}
+	if f.HostapdConf.Bridge != "" {
+		data = append(data, "bridge=" + f.HostapdConf.Bridge)
+	}
+	if f.HostapdConf.Interface != "" {
+		data = append(data, "interface=" + f.HostapdConf.Interface)
+	}
+	if f.HostapdConf.SSID != "" {
+		data = append(data, "ssid=" + f.HostapdConf.SSID)
+	}
+	if f.HostapdConf.Password != "" {
+		data = append(data, "wpa_passphrase=" + f.HostapdConf.Password)
+	}
+	if f.HostapdConf.IgnoreBroadcastSSID != "" {
+		data = append(data, "ignore_broadcast_ssid=" + f.HostapdConf.IgnoreBroadcastSSID)
+	}
+	if f.HostapdConf.Ieee80211n != "" {
+		data = append(data, "ieee80211n=" + f.HostapdConf.Ieee80211n)
+	}
+	if f.HostapdConf.Hw_mode != "" {
+		data = append(data, "hw_mode=" + f.HostapdConf.Hw_mode)
+	}
+	if f.HostapdConf.Country_code != "" {
+		data = append(data, "country_code=" + f.HostapdConf.Country_code)
+	}
+	if f.HostapdConf.Channel != "" {
+		data = append(data, "channel=" + f.HostapdConf.Channel)
 	}
 
 	for k, v := range f.HostapdConf.Additionals {
