@@ -1,6 +1,9 @@
 package hostapd
 
-import "strings"
+import (
+	"strconv"
+	"strings"
+)
 
 // State represents the current status of HOSTAPD
 type State struct {
@@ -8,6 +11,8 @@ type State struct {
 	Phy     string `json:"phy"`
 	Frequ   string `json:"freq"`
 	Channel string `json:"channel"`
+	SSID    string `json:"ssid"`
+	Clients int    `json:"clients"`
 }
 
 // NewState will return the state of the HOSTAPD when given the raw output
@@ -27,9 +32,12 @@ func NewState(data string) State {
 		case "freq":
 			s.Frequ = bits[1]
 		case "channel":
-			s.Channel= bits[1]
+			s.Channel = bits[1]
+		case "ssid[0]":
+			s.SSID = bits[1]
+		case "num_sta[0]":
+			s.Clients, _ = strconv.Atoi(bits[1])
 		}
 	}
-
 	return s
 }
