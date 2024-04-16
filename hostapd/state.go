@@ -16,6 +16,7 @@ type State struct {
 }
 
 // NewState will return the state of the HOSTAPD when given the raw output
+// TODO: function should be refactored
 func NewState(data string) State {
 	s := State{}
 	for _, l := range strings.Split(data, "\n") {
